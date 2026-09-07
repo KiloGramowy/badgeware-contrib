@@ -31,7 +31,7 @@ class player_base:
     @property
     def b(self):
         return self.y + self.h
-    
+
     @r.setter
     def r(self, a):
         self.x = a - self.w
@@ -57,7 +57,7 @@ class player_base:
         if self.b < platform.y and self.b + self.vy >= platform.y:
             return True
         return False
-    
+
     def is_airborne(self):
         airborne = True
         for platform in platforms:
@@ -86,8 +86,10 @@ class player_base:
             elif controls["MOVE_LEFT"]:
                 self.vx -= 1.5
 
-            if self.vx > 0: self.vx -= 0.5
-            elif self.vx < 0: self.vx += 0.5
+            if self.vx > 0:
+                self.vx -= 0.5
+            elif self.vx < 0:
+                self.vx += 0.5
 
         if not self.dead:
             for platform in platforms:
@@ -139,15 +141,15 @@ class platform_base:
     @property
     def r(self):
         return self.x + self.w
-    
+
     @property
     def b(self):
         return self.y + self.h
-    
+
     @property
     def bounding_box(self):
         return rect(self.x - self.keepout, self.y - self.keepout, self.w + (2 * self.keepout), self.h + (2 * self.keepout))
-    
+
     def update(self):
         global score
 
@@ -168,16 +170,15 @@ class platform_base:
         self.w = random.randint(int(screen.width / 2), screen.width)
 
     def check_collisions(self):
-        global platforms
         for platform in platforms:
             if platform.id == self.id:
                 continue
             if self.bounding_box.intersects(platform.bounding_box):
                 return True
         return False
-    
+
     def spawn_acorn(self):
-        global acorns
+
         acorn = acorn_base(random.randint(self.x, self.r - 10), self.y - 10)
         acorns.append(acorn)
 
@@ -185,7 +186,7 @@ class platform_base:
         screen.pen = brush.image(branch, mat3().translate(self.x, self.y))
         player_box = shape.rectangle(self.x, self.y, self.w, self.h)
         screen.shape(player_box)
-    
+
 
 class acorn_base:
     def __init__(self, x, y):
@@ -197,21 +198,21 @@ class acorn_base:
     @property
     def r(self):
         return self.x + self.w
-    
+
     @property
     def b(self):
         return self.y + self.h
-    
+
     @property
     def bounding_box(self):
         return rect(self.x, self.y, self.w, self.h)
-    
+
     def move(self):
         self.x -= foreground_scroll_speed
         self.draw()
 
     def update(self):
-        global acorns, score
+        global score
 
         if self.bounding_box.intersects(player.bounding_box):
             acorns.remove(self)
@@ -219,7 +220,7 @@ class acorn_base:
 
         elif self.r < 0:
             acorns.remove(self)
-    
+
     def draw(self):
         screen.blit(acorn_sml, vec2(self.x, self.y))
 
@@ -247,7 +248,6 @@ def draw_background(scroll=True):
 
 
 def draw_score():
-    global score
 
     x = screen.width - 16
     y = 3
@@ -264,24 +264,24 @@ def draw_score():
     y -= 5
     screen.text(str(score), vec2(x, y))
 
-    x -=2
-    y -=2
+    x -= 2
+    y -= 2
     screen.pen = color.brown
     screen.text(str(score), vec2(x, y))
 
 
 def init_gamepad():
     global gamepad
-    # gamepads = qwstpad.Gamepadhelper()
-    # for i in gamepads.pads:
-    #     if i is not None:
-    #         gamepad = i
-    #         return i
+    gamepads = qwstpad.Gamepadhelper()
+    for i in gamepads.pads:
+        if i is not None:
+            gamepad = i
+            return i
     return None
 
 
 def parse_controls():
-    global controls, gamepad
+    global gamepad
 
     if gamepad:
         try:
@@ -312,6 +312,7 @@ def parse_controls():
 def init_platforms():
     global platforms
     platforms = [platform_base("a", 0, 50), platform_base("b", 40, 80), platform_base("c", 80, 110)]
+
 
 background = image.load("assets/background.png")
 branch = image.load("assets/branch.png")
@@ -348,6 +349,7 @@ State.load("acorn_highway", save_state)
 init_gamepad()
 init_platforms()
 
+
 def title_loop():
     global current_game_state, title_scroll_amount
 
@@ -382,6 +384,7 @@ def title_loop():
     if controls["ANY_KEY"]:
         current_game_state = game_state.GAMEPLAY
 
+
 def gameplay_loop():
     global current_game_state
 
@@ -391,7 +394,7 @@ def gameplay_loop():
 
     for acorn in acorns:
         acorn.move()
-    
+
     for acorn in acorns:
         acorn.update()
 
@@ -403,6 +406,7 @@ def gameplay_loop():
     if player.b >= screen.height:
         player.death()
         current_game_state = game_state.DEATH_ANIM
+
 
 def death_anim_loop():
     global current_game_state
@@ -419,8 +423,9 @@ def death_anim_loop():
     if player.b >= screen.height:
         current_game_state = game_state.GAMEOVER
 
+
 def game_over_loop():
-    global current_game_state, score, acorns
+    global current_game_state, score
 
     screen.blit(gameover, vec2(0, 0))
 
