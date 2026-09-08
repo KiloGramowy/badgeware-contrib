@@ -10,7 +10,7 @@ sys.path.insert(0, "/system/apps/co2_plus")
 os.chdir("/system/apps/co2_plus")
 
 screen.antialias = image.X4
-screen.font = rom_font.absolute
+screen.font = font.absolute
 display.set_brightness(0.05)
 
 

@@ -48,10 +48,10 @@ def update():
     co2_text = f"{co2:,} PPM"
     w, h = screen.measure_text(co2_text, size)
     x, y = c_win.x + (c_win.w // 2) - (w / 2), c_win.y + 8
-    text.draw(screen, co2_text, rect(x - 2, y, w + 10, h), size=size)
+    screen.text(co2_text, rect(x - 2, y, w + 10, h), size)
 
     # draw the temperature and humidity in a pixel font
-    screen.font = rom_font.ignore
+    screen.font = font.ignore
     th_text = f"{temperature:.1f}°C   |   {humidity:.1f}%"
     w, _ = screen.measure_text(th_text)
     x, y = th_win.x + (th_win.w // 2) - (w / 2) + 8, th_win.y + 20
