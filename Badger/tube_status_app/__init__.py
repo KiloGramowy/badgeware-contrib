@@ -22,8 +22,8 @@ def update():
         f"{line['name']}: {line['lineStatuses'][0]['statusSeverityDescription']}\n"
         for line in data
         )
-        screen.font = rom_font.unfair
-        text.draw(screen, "Tube Status", title)
+        screen.font = font.unfair
+        screen.text("Tube Status", title)
         line = shape.line(0, 15, 264, 15, 2)
         line2 = shape.line(0, 20, 264, 20, 2)
         screen.shape(line)
@@ -31,17 +31,16 @@ def update():
         for i in range(screen.width / 8):
             x = 8 * i
             screen.line(x, 15, x, 20)
-        screen.font = rom_font.nope
-        text.draw(screen, message, tubes)
+        screen.font = font.nope
+        screen.text(message, tubes)
         badge.update()
         time.sleep(300)
     else:
         screen.pen = color.white
         screen.clear()
         screen.pen = color.black
-        text.draw(screen, "No Wi-Fi connection", title)
+        screen.text("No Wi-Fi connection", title)
         badge.update()
         badge.caselights(1)
         time.sleep(1)
-        wifi.tick()
 run(update)
