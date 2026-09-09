@@ -3,7 +3,7 @@ import os
 
 
 badge.mode(LORES | VSYNC)
-screen.font = rom_font.sins
+screen.font = font.sins
 
 BG = color.rgb(12, 18, 28)
 PANEL = color.rgb(25, 36, 52)
