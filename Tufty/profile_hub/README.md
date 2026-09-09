@@ -12,43 +12,6 @@ Tufty Profile Hub turns a physically tested personal Badgeware app into a reusab
 
 ![Tufty Profile Hub running on a physical Pimoroni Tufty 2350](docs/images/tufty-profile-hub-main.jpg)
 
-## 📸 Hardware Demo
-
-Profile Hub running on a physical Pimoroni Tufty 2350. WDGWars and WiGLE screens below show live data from the hardware-tested runtime.
-
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <img src="docs/images/tufty-profile-hub-website.jpg" alt="Website QR page on a physical Pimoroni Tufty 2350" width="380"><br>
-      <strong>Website QR</strong>
-    </td>
-    <td align="center" width="50%">
-      <img src="docs/images/tufty-profile-hub-youtube.jpg" alt="YouTube QR page on a physical Pimoroni Tufty 2350" width="380"><br>
-      <strong>YouTube QR</strong>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="50%">
-      <img src="docs/images/tufty-profile-hub-github.jpg" alt="GitHub QR page on a physical Pimoroni Tufty 2350" width="380"><br>
-      <strong>GitHub QR</strong>
-    </td>
-    <td align="center" width="50%">
-      <img src="docs/images/tufty-profile-hub-wdgwars.jpg" alt="WDGWars LIVE screen on a physical Pimoroni Tufty 2350" width="380"><br>
-      <strong>WDGWars LIVE</strong>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="50%">
-      <img src="docs/images/tufty-profile-hub-wigle.jpg" alt="WiGLE LIVE screen on a physical Pimoroni Tufty 2350" width="380"><br>
-      <strong>WiGLE LIVE</strong>
-    </td>
-    <td align="center" width="50%">
-      <img src="docs/images/tufty-profile-hub-main.jpg" alt="Main profile screen on a physical Pimoroni Tufty 2350" width="380"><br>
-      <strong>Main profile</strong>
-    </td>
-  </tr>
-</table>
-
 ## ✨ Features
 
 - Configurable main profile page for name, role, primary label, and technical tagline.
@@ -62,6 +25,12 @@ Profile Hub running on a physical Pimoroni Tufty 2350. WDGWars and WiGLE screens
 - Persistent last-known WDGWars and WiGLE statistics survive restarts and offline starts.
 - Host-side QR generation, so Tufty does not need `qrcode` or Pillow.
 - 24x24 PNG launcher icon inspired by the XIAO ESP32-C5 board shape.
+
+## 👤 Main Profile
+
+The main page is the identity anchor for the badge. It shows the configured name, role, primary label, and technical tagline alongside the XIAO ESP32-C5-inspired board graphic and discreet `Built by KiloGramowy` attribution.
+
+Controls stay available across the app: `A = BACK`, `B = NEXT`, and `C = HOME`. The hero image above shows this main profile page running on a physical Pimoroni Tufty 2350.
 
 ## 🚀 Quick Start
 
@@ -136,6 +105,24 @@ URL -> build_profile.py -> generated_qr.py -> Tufty QR renderer
 
 Badgeware does not need the CPython `qrcode` or Pillow packages. Generated Tufty builds keep only compact `QR_CODES` data.
 
+### Website QR
+
+The Website page demonstrates a generated QR screen with a short label and high-contrast QR code.
+
+![Website QR page on a physical Pimoroni Tufty 2350](docs/images/tufty-profile-hub-website.jpg)
+
+### YouTube QR
+
+The YouTube page uses the same generated QR layout for a different configured link.
+
+![YouTube QR page on a physical Pimoroni Tufty 2350](docs/images/tufty-profile-hub-youtube.jpg)
+
+### GitHub QR
+
+The GitHub page shows the project/profile link style used by the public demo preset.
+
+![GitHub QR page on a physical Pimoroni Tufty 2350](docs/images/tufty-profile-hub-github.jpg)
+
 ## 📡 WDGWars
 
 WDGWars is visible by default. If `wdgwars_api_key` is blank, the page shows a setup message and makes no authenticated API request.
@@ -148,6 +135,8 @@ The runtime uses:
 
 The page focuses on username, team/gang metadata when available, today/week/all-time ranks, and Wi-Fi/Bluetooth/Aircraft statistics. All-time rank is visually dominant.
 
+![WDGWars LIVE screen on a physical Pimoroni Tufty 2350](docs/images/tufty-profile-hub-wdgwars.jpg)
+
 ## 🌐 WiGLE.net
 
 WiGLE is visible by default. If either `wigle_api_name` or `wigle_api_token` is blank, the page shows a setup message and makes no authenticated API request.
@@ -159,6 +148,8 @@ The runtime uses WiGLE API v2:
 - HTTP Basic Authentication with WiGLE API Name and API Token
 
 The screen keeps the compact reliable subset: username, global rank, monthly rank, discovered Wi-Fi, discovered Bluetooth, and discovered cellular networks.
+
+![WiGLE LIVE screen on a physical Pimoroni Tufty 2350](docs/images/tufty-profile-hub-wigle.jpg)
 
 ## 🔄 Refresh Policy
 
