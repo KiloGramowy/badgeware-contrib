@@ -2,12 +2,12 @@
 
 try:
     import json
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     json = None
 
 try:
     import os
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     os = None
 
 try:
@@ -21,6 +21,7 @@ except ImportError:
 VERSION = 3
 SCHEMA = "open_meteo_forecast_v2"
 SUPPORTED_VERSIONS = (1, 2, 3)
+JSON_EXCEPTIONS = (OSError, TypeError, ValueError)
 
 
 def _empty():
@@ -57,7 +58,7 @@ def load_cache(path=cfg.WEATHER_CACHE_PATH):
     try:
         with open(path, "r") as handle:
             raw = json.load(handle)
-    except Exception:
+    except JSON_EXCEPTIONS:
         return None
     if not isinstance(raw, dict) or raw.get("version") not in SUPPORTED_VERSIONS:
         return None
@@ -77,12 +78,12 @@ def _exists(path):
         try:
             os.stat(path)
             return True
-        except Exception:
+        except OSError:
             return False
     try:
         with open(path, "r"):
             return True
-    except Exception:
+    except OSError:
         return False
 
 
@@ -106,25 +107,25 @@ def _write_cache(cache, path, temp_path):
     try:
         with open(temp_path, "w") as handle:
             json.dump(cache, handle)
-    except Exception:
+    except JSON_EXCEPTIONS:
         return False
     try:
         _rename(temp_path, path)
         return True
-    except Exception:
+    except OSError:
         pass
     try:
         if _exists(path):
             _remove(path)
         _rename(temp_path, path)
         return True
-    except Exception:
+    except OSError:
         pass
     try:
         with open(path, "w") as handle:
             json.dump(cache, handle)
         return True
-    except Exception:
+    except JSON_EXCEPTIONS:
         return False
 
 

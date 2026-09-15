@@ -4,10 +4,14 @@ try:
     import os
     import sys
     import time
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     os = None
     sys = None
     time = None
+
+
+BADGEWARE_EXCEPTIONS = (AttributeError, NameError, OSError, RuntimeError, TypeError, ValueError)
+CONVERSION_EXCEPTIONS = (TypeError, ValueError)
 
 
 def _bootstrap_app_dir():
@@ -31,7 +35,6 @@ _bootstrap_app_dir()
 
 try:
     from . import weather_config as cfg
-    from . import weather_model
     from . import reality_history
     from . import reality_check
     from . import weather_provider
@@ -39,7 +42,6 @@ try:
     from . import safe_wifi
 except ImportError:
     import weather_config as cfg
-    import weather_model
     import reality_history
     import reality_check
     import weather_provider
@@ -51,7 +53,7 @@ try:
     badge.mode(HIRES | VSYNC)
     screen.antialias = image.X4
     BADGEWARE_READY = True
-except Exception:
+except BADGEWARE_EXCEPTIONS:
     BADGEWARE_READY = False
 
 
@@ -184,12 +186,9 @@ def _ticks_ms():
         return time.ticks_ms()
     try:
         return badge.ticks
-    except Exception:
+    except BADGEWARE_EXCEPTIONS:
         pass
-    try:
-        return local_sensor._ticks_ms()
-    except Exception:
-        return 0
+    return local_sensor.ticks_ms()
 
 
 def _timer_due(now, then, interval):
@@ -208,7 +207,7 @@ def update_auto_brightness(now):
     auto_brightness_last_sample = now
     try:
         raw = badge.light_level()
-    except Exception:
+    except BADGEWARE_EXCEPTIONS:
         return False
     target = brightness_for_light_level(raw)
     auto_brightness_smoothed = (
@@ -220,7 +219,7 @@ def update_auto_brightness(now):
         return False
     try:
         display.backlight(auto_brightness_smoothed)
-    except Exception:
+    except BADGEWARE_EXCEPTIONS:
         return False
     auto_brightness_applied = auto_brightness_smoothed
     return True
@@ -244,7 +243,7 @@ def capture_button_press():
             return "A"
         if badge.pressed(BUTTON_B):
             return "B"
-    except Exception:
+    except BADGEWARE_EXCEPTIONS:
         return None
     return None
 
@@ -269,10 +268,7 @@ def handle_navigation(now):
 def _ticks_diff(now, then):
     if then is None:
         return None
-    try:
-        return local_sensor._ticks_diff(now, then)
-    except Exception:
-        return int(now) - int(then)
+    return local_sensor.ticks_diff(now, then)
 
 
 def _format(value, suffix="", decimals=0, missing="--"):
@@ -282,7 +278,7 @@ def _format(value, suffix="", decimals=0, missing="--"):
         if decimals:
             return ("{0:0." + str(decimals) + "f}{1}").format(value, suffix)
         return "{}{}".format(int(round(value)), suffix)
-    except Exception:
+    except CONVERSION_EXCEPTIONS:
         return "{}{}".format(value, suffix)
 
 
@@ -376,7 +372,7 @@ def _use_ui_font():
     screen.font = MONA
     try:
         screen.antialias = image.X4
-    except Exception:
+    except BADGEWARE_EXCEPTIONS:
         pass
 
 
@@ -417,7 +413,7 @@ def _hour_label(value):
 def _clamp_pct(value):
     try:
         numeric = float(value)
-    except Exception:
+    except CONVERSION_EXCEPTIONS:
         return None
     if numeric < 0:
         return 0
@@ -436,7 +432,7 @@ def _weekday_label(date_text):
         year = int(text[0:4])
         month = int(text[5:7])
         day = int(text[8:10])
-    except Exception:
+    except CONVERSION_EXCEPTIONS:
         return "--"
     if month < 1 or month > 12 or day < 1:
         return "--"
@@ -469,7 +465,7 @@ def _clear():
     screen.pen = BG
     try:
         screen.clear()
-    except Exception:
+    except BADGEWARE_EXCEPTIONS:
         screen.rectangle(0, 0, W, H)
 
 
@@ -545,7 +541,7 @@ def _panel(x, y, w, h, pen=None):
     _line(x, y + h, x + w, y + h, MUTED)
 
 
-def _metric(label, value, x, y, w=56):
+def _metric(label, value, x, y, _w=56):
     _label(label, x, y)
     _text(value, x, y + 13, 14, WHITE)
 
@@ -740,7 +736,7 @@ def _status_pen(status):
 def _connection_diagnostics():
     try:
         return weather_service.diagnostics()
-    except Exception:
+    except (AttributeError, OSError, RuntimeError, TypeError, ValueError):
         return {"wifi": "WIFI: ?", "network": "NET: ?", "last_error": "MODEL_FAIL"}
 
 
@@ -867,7 +863,6 @@ def _cloud(cx, cy, scale, pen):
 
 def _draw_icon(condition, x, y, size):
     condition = str(condition or "cloudy").lower()
-    accent = _condition_accent(condition)
     cx = x + size // 2
     cy = y + size // 2
     scale = float(size) / 44.0
@@ -882,7 +877,7 @@ def _draw_icon(condition, x, y, size):
         _line(x + 8, cy, x + size - 3, cy, CYAN)
         _line(x + 4, cy + int(size * 0.22), x + size - 8, cy + int(size * 0.22), CYAN)
         return
-    if "clear" in condition and not "day" in condition:
+    if "clear" in condition and "day" not in condition:
         _circle(cx - 2, cy, size // 3, GOLD)
         _circle(cx + 5, cy - 3, size // 3, BG)
         return
@@ -1139,6 +1134,6 @@ def on_exit():
 if BADGEWARE_READY:
     try:
         display.backlight(auto_brightness_applied)
-    except Exception:
+    except BADGEWARE_EXCEPTIONS:
         pass
     run(update)

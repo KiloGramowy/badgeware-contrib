@@ -145,7 +145,7 @@ WMO_CONDITIONS = {
 def wmo_condition(code):
     try:
         numeric = int(code)
-    except Exception:
+    except (TypeError, ValueError):
         return "unknown"
     return WMO_CONDITIONS.get(numeric, "unknown")
 

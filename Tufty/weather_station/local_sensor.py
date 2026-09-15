@@ -2,7 +2,7 @@
 
 try:
     import time
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     time = None
 
 try:
@@ -17,6 +17,8 @@ LSM6DS3_ADDRESS = 0x6A
 LTR559_PROXIMITY_INDEX = 0
 LTR559_LUX_INDEX = 6
 LUX_CHANGE_EPS = 0.1
+CONVERSION_EXCEPTIONS = (TypeError, ValueError)
+HARDWARE_EXCEPTIONS = (AttributeError, ImportError, OSError, RuntimeError, TypeError, ValueError)
 
 
 def lux_changed(previous, current, epsilon=LUX_CHANGE_EPS):
@@ -26,7 +28,7 @@ def lux_changed(previous, current, epsilon=LUX_CHANGE_EPS):
         return True
     try:
         return abs(float(current) - float(previous)) >= epsilon
-    except Exception:
+    except CONVERSION_EXCEPTIONS:
         return current != previous
 
 
@@ -39,24 +41,32 @@ def normalize_pressure_hpa(value):
     return pressure
 
 
-def _ticks_ms():
+def ticks_ms():
     if time is not None and hasattr(time, "ticks_ms"):
         return time.ticks_ms()
     try:
         return badge.ticks
-    except Exception:
+    except HARDWARE_EXCEPTIONS:
         return 0
 
 
-def _ticks_diff(now, then):
+def ticks_diff(now, then):
     if then is None:
         return None
     if time is not None and hasattr(time, "ticks_diff"):
         try:
             return time.ticks_diff(now, then)
-        except Exception:
+        except HARDWARE_EXCEPTIONS:
             pass
     return int(now) - int(then)
+
+
+def _ticks_ms():
+    return ticks_ms()
+
+
+def _ticks_diff(now, then):
+    return ticks_diff(now, then)
 
 
 def _timer_due(now, then, interval):
@@ -122,20 +132,20 @@ class LocalSensor:
             try:
                 from breakout_bme280 import BreakoutBME280
                 self.bme_cls = BreakoutBME280
-            except Exception:
+            except ImportError:
                 self.bme_cls = False
         if self.ltr_cls is None:
             try:
                 from breakout_ltr559 import BreakoutLTR559
                 self.ltr_cls = BreakoutLTR559
-            except Exception:
+            except ImportError:
                 self.ltr_cls = False
         if self.lsm_cls is None:
             try:
                 from lsm6ds3 import LSM6DS3, NORMAL_MODE_104HZ
                 self.lsm_cls = LSM6DS3
                 self.lsm_mode = NORMAL_MODE_104HZ
-            except Exception:
+            except ImportError:
                 self.lsm_cls = False
 
     def init(self):
@@ -149,11 +159,11 @@ class LocalSensor:
                 if not self.detected_addresses:
                     try:
                         self.detected_addresses = list(self.bme_i2c.scan())
-                    except Exception:
+                    except HARDWARE_EXCEPTIONS:
                         self.detected_addresses = []
                 self.bme = self.bme_cls(self.bme_i2c)
                 self.status["bme"] = "OK"
-            except Exception as exc:
+            except HARDWARE_EXCEPTIONS as exc:
                 self.bme_i2c = None
                 self.bme = None
                 self.status["bme"] = "N/A"
@@ -170,7 +180,7 @@ class LocalSensor:
                     self.lsm = self.lsm_cls(self.imu_i2c, mode=self.lsm_mode)
                 self.motion_available = True
                 self.status["motion"] = "OK"
-            except Exception as exc:
+            except HARDWARE_EXCEPTIONS as exc:
                 self.imu_i2c = None
                 self.lsm = None
                 self.motion_available = False
@@ -184,7 +194,7 @@ class LocalSensor:
                     self.i2c = self.ltr_i2c
                 self.ltr = self.ltr_cls(self.ltr_i2c)
                 self.status["ltr"] = "OK"
-            except Exception as exc:
+            except HARDWARE_EXCEPTIONS as exc:
                 self.ltr_i2c = None
                 self.ltr = None
                 self.status["ltr"] = "N/A"
@@ -206,10 +216,10 @@ class LocalSensor:
         key = getattr(self.ltr_cls, attr_name, fallback_index)
         try:
             return values[key]
-        except Exception:
+        except (AttributeError, IndexError, KeyError, TypeError):
             return None
 
-    def _read_ltr(self, reading, now_ms=None):
+    def _read_ltr(self, reading, _now_ms=None):
         if self.ltr is None:
             return False
         values = self.ltr.get_reading()
@@ -238,7 +248,7 @@ class LocalSensor:
             values = self.lsm.get_readings()
             reading["motion_sample"] = True
             reading["_motion_axes"] = values
-        except Exception:
+        except HARDWARE_EXCEPTIONS:
             reading["motion_sample"] = False
 
     def _empty_reading(self, now_ms):
@@ -280,20 +290,20 @@ class LocalSensor:
             self._read_bme(reading)
             if reading.get("temperature_c") is not None:
                 any_success = True
-        except Exception as exc:
+        except HARDWARE_EXCEPTIONS as exc:
             self.status["bme"] = "ERR"
             reading["status"] = dict(self.status)
             self.last_error = exc
         try:
             if self._read_ltr(reading, now_ms):
                 any_success = True
-        except Exception as exc:
+        except HARDWARE_EXCEPTIONS as exc:
             self.status["ltr"] = "ERR"
             reading["status"] = dict(self.status)
             self.last_error = exc
         try:
             self._read_lsm(reading)
-        except Exception as exc:
+        except HARDWARE_EXCEPTIONS as exc:
             self.status["motion"] = "N/A"
             reading["motion_available"] = False
             reading["status"] = dict(self.status)
@@ -323,12 +333,12 @@ class LocalSensor:
                 self._read_bme(reading)
                 if reading.get("temperature_c") is not None:
                     any_success = True
-            except Exception as exc:
+            except HARDWARE_EXCEPTIONS as exc:
                 self.status["bme"] = "ERR"
                 self.last_error = exc
             try:
                 self._read_lsm(reading)
-            except Exception as exc:
+            except HARDWARE_EXCEPTIONS as exc:
                 self.status["motion"] = "N/A"
                 reading["motion_available"] = False
                 self.last_error = exc
@@ -338,7 +348,7 @@ class LocalSensor:
             try:
                 if self._read_ltr(reading, now_ms):
                     any_success = True
-            except Exception as exc:
+            except HARDWARE_EXCEPTIONS as exc:
                 self.status["ltr"] = "ERR"
                 self.last_error = exc
 

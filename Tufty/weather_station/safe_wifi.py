@@ -2,27 +2,28 @@
 
 try:
     import network
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     network = None
 
 try:
     import secrets
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     secrets = None
 
 try:
     import sys
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     sys = None
 
 try:
     import time
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     time = None
 
 
 CONNECT_TIMEOUT_MS = 8000
 RETRY_COOLDOWN_MS = 60000
+WIFI_EXCEPTIONS = (AttributeError, NameError, OSError, RuntimeError, TypeError, ValueError)
 
 STATE_IDLE = 0
 STATE_CONNECTING = 1
@@ -60,12 +61,12 @@ def _load_secrets():
     try:
         if "/" not in sys.path:
             sys.path.insert(0, "/")
-    except Exception:
+    except WIFI_EXCEPTIONS:
         pass
     try:
         import secrets as loaded
         secrets = loaded
-    except Exception:
+    except ImportError:
         pass
     return secrets
 
@@ -75,7 +76,7 @@ def _ticks_ms():
         return time.ticks_ms()
     try:
         return badge.ticks
-    except Exception:
+    except WIFI_EXCEPTIONS:
         return 0
 
 
@@ -83,7 +84,7 @@ def _ticks_diff(now, then):
     if time is not None and hasattr(time, "ticks_diff"):
         try:
             return time.ticks_diff(now, then)
-        except Exception:
+        except WIFI_EXCEPTIONS:
             pass
     return int(now) - int(then)
 
@@ -161,7 +162,7 @@ def _disconnect_current(deactivate=False):
             _wlan.disconnect()
             if deactivate:
                 _wlan.active(False)
-    except Exception:
+    except WIFI_EXCEPTIONS:
         pass
 
 
@@ -180,7 +181,7 @@ def _mark_failed(now):
 def _hard_failure(wlan):
     try:
         return wlan.status() < 0
-    except Exception:
+    except WIFI_EXCEPTIONS:
         return False
 
 
@@ -197,7 +198,7 @@ def _start_current(now):
             _state = STATE_CONNECTED
             return True
         _wlan.connect(_current_network[0], _current_network[1])
-    except Exception:
+    except WIFI_EXCEPTIONS:
         return False
     _started_at = now
     _state = STATE_CONNECTING
@@ -251,7 +252,7 @@ def connect():
                     _last_successful = _current_network
                 _set_result("OK")
                 return True
-        except Exception:
+        except WIFI_EXCEPTIONS:
             pass
 
     if _state == STATE_CONNECTED:
@@ -288,7 +289,7 @@ def connect():
 def is_connected():
     try:
         return bool(_wlan is not None and _wlan.isconnected())
-    except Exception:
+    except WIFI_EXCEPTIONS:
         return False
 
 

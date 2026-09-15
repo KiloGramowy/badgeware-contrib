@@ -2,12 +2,12 @@
 
 try:
     import json
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     json = None
 
 try:
     from fetch import AsyncFetch, HTTPException
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     AsyncFetch = None
 
     class HTTPException(Exception):
@@ -46,6 +46,8 @@ BODY_TOO_LARGE = "BODY_TOO_LARGE"
 JSON_FAIL = "JSON_FAIL"
 CURRENT_MISSING = "CURRENT_MISSING"
 MODEL_FAIL = "MODEL_FAIL"
+CONVERSION_EXCEPTIONS = (TypeError, ValueError)
+FETCH_EXCEPTIONS = (AttributeError, OSError, RuntimeError, TypeError, ValueError)
 
 
 class WeatherProviderError(OSError):
@@ -63,7 +65,7 @@ def _ticks_diff(now, then):
         import time
         if hasattr(time, "ticks_diff"):
             return time.ticks_diff(now, then)
-    except Exception:
+    except (AttributeError, ImportError, OSError, RuntimeError, TypeError, ValueError):
         pass
     return int(now) - int(then)
 
@@ -91,7 +93,7 @@ def _float_or_none(value):
         return None
     try:
         return float(value)
-    except Exception:
+    except CONVERSION_EXCEPTIONS:
         return None
 
 
@@ -100,7 +102,7 @@ def _int_or_none(value):
         return None
     try:
         return int(value)
-    except Exception:
+    except CONVERSION_EXCEPTIONS:
         return None
 
 
@@ -216,7 +218,7 @@ def weekday_label(date_text):
         year = int(str(date_text)[0:4])
         month = int(str(date_text)[5:7])
         day = int(str(date_text)[8:10])
-    except Exception:
+    except CONVERSION_EXCEPTIONS:
         return "--"
     if month < 1 or month > 12 or day < 1:
         return "--"
@@ -404,7 +406,7 @@ class OpenMeteoProvider:
         self._http_error = HTTPException(fetcher)
         return True
 
-    def start(self, now_ms=0):
+    def start(self, _now_ms=0):
         if self.active:
             return False
         fetcher = self._ensure_fetcher()
@@ -427,13 +429,13 @@ class OpenMeteoProvider:
         fetcher = self._ensure_fetcher()
         try:
             status = fetcher.update()
-        except Exception as exc:
+        except FETCH_EXCEPTIONS as exc:
             self.active = False
             self.last_http_status = getattr(fetcher, "http_status", None)
             self.last_error_code = _classify_fetch_exception(exc, fetcher)
             self.last_error_text = str(exc)[:48]
             self.last_stage = _error_label(self.last_error_code, self.last_http_status)
-            raise WeatherProviderError(self.last_error_code, self.last_error_text, self.last_http_status)
+            raise WeatherProviderError(self.last_error_code, self.last_error_text, self.last_http_status) from exc
 
         self.last_http_status = getattr(fetcher, "http_status", None)
         self.last_stage = _phase_label(fetcher)
@@ -454,20 +456,20 @@ class OpenMeteoProvider:
         self.active = False
         try:
             data = fetcher.to_json()
-        except Exception as exc:
+        except FETCH_EXCEPTIONS as exc:
             self.last_error_code = JSON_FAIL
             self.last_error_text = str(exc)[:48]
             self.last_stage = "ERR JSON"
-            raise WeatherProviderError(JSON_FAIL, self.last_error_text, self.last_http_status)
+            raise WeatherProviderError(JSON_FAIL, self.last_error_text, self.last_http_status) from exc
         try:
             current = normalize_open_meteo_current(data, now_ms)
             hourly = normalize_open_meteo_hourly(data, current.get("observed_at") if current else None)
             daily = normalize_open_meteo_daily(data)
-        except Exception as exc:
+        except FETCH_EXCEPTIONS as exc:
             self.last_error_code = MODEL_FAIL
             self.last_error_text = str(exc)[:48]
             self.last_stage = "ERR MODEL"
-            raise WeatherProviderError(MODEL_FAIL, self.last_error_text, self.last_http_status)
+            raise WeatherProviderError(MODEL_FAIL, self.last_error_text, self.last_http_status) from exc
         if not current:
             self.last_error_code = CURRENT_MISSING
             self.last_error_text = "missing current"
@@ -697,7 +699,7 @@ class WeatherService:
         try:
             payload = self.provider.fetch(now_ms)
             return self._accept_live(payload, now_ms)
-        except Exception as exc:
+        except FETCH_EXCEPTIONS as exc:
             self.last_error = exc
             self.last_failure_ms = now_ms
             self.fetch_state = FETCH_ERROR_RETRY
@@ -707,7 +709,7 @@ class WeatherService:
     def _poll_async(self, now_ms):
         try:
             payload = self.provider.update(now_ms)
-        except Exception as exc:
+        except FETCH_EXCEPTIONS as exc:
             self.last_error = exc
             self.last_failure_ms = now_ms
             self.fetch_state = FETCH_ERROR_RETRY

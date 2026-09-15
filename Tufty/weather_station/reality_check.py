@@ -1723,7 +1723,7 @@ def _presentation(record, fit_checker):
         return dict(record)
     try:
         fitted = fit_checker(record)
-    except Exception:
+    except (AttributeError, OSError, RuntimeError, TypeError, ValueError):
         fitted = None
     if not fitted:
         return None

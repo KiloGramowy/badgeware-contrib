@@ -2,12 +2,12 @@
 
 try:
     import json
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     json = None
 
 try:
     import os
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     os = None
 
 try:
@@ -19,6 +19,7 @@ except ImportError:
 PATH = "/weather_station_reality_history.json"
 TEMP_PATH = "/weather_station_reality_history.tmp"
 VERSION = 1
+JSON_EXCEPTIONS = (OSError, TypeError, ValueError)
 
 
 def _trim(items, limit):
@@ -52,7 +53,7 @@ def load(path=PATH):
     try:
         with open(path, "r") as handle:
             raw = json.load(handle)
-    except Exception:
+    except JSON_EXCEPTIONS:
         return {"global": [], "categories": {}}
     if not isinstance(raw, dict) or raw.get("version") != VERSION:
         return {"global": [], "categories": {}}
@@ -64,12 +65,12 @@ def _exists(path):
         try:
             os.stat(path)
             return True
-        except Exception:
+        except OSError:
             return False
     try:
         with open(path, "r"):
             return True
-    except Exception:
+    except OSError:
         return False
 
 
@@ -93,25 +94,25 @@ def _write(payload, path, temp_path):
     try:
         with open(temp_path, "w") as handle:
             json.dump(payload, handle)
-    except Exception:
+    except JSON_EXCEPTIONS:
         return False
     try:
         _rename(temp_path, path)
         return True
-    except Exception:
+    except OSError:
         pass
     try:
         if _exists(path):
             _remove(path)
         _rename(temp_path, path)
         return True
-    except Exception:
+    except OSError:
         pass
     try:
         with open(path, "w") as handle:
             json.dump(payload, handle)
         return True
-    except Exception:
+    except JSON_EXCEPTIONS:
         return False
 
 
